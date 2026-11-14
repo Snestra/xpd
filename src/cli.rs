@@ -50,13 +50,15 @@ enum Format {
 enum Cmd {
     /// Lint Python files. Exit 0 when clean, 1 on any error-severity issue, 2 if xpd can't run.
     ///
-    /// A library's rules run only on files that import it. `[*]` marks an issue `--fix` fixes.
+    /// A library's rules run only on files that import it, and the Python rules run on every file.
+    /// `[*]` marks an issue `--fix` fixes.
     ///
     /// Examples:
     ///   xpd check src/
     ///   xpd check analysis.py --format json
     ///   xpd check . --fix
     ///   xpd check . --fix --unsafe-fixes
+    #[command(verbatim_doc_comment)]
     Check {
         /// Files or directories (directories respect .gitignore).
         #[arg(default_value = ".")]
@@ -93,6 +95,7 @@ enum Cmd {
     /// Examples:
     ///   xpd graph features.py
     ///   xpd graph loaders.py features.py --format json
+    #[command(verbatim_doc_comment)]
     Graph {
         /// Files or directories (directories respect .gitignore).
         #[arg(required = true)]

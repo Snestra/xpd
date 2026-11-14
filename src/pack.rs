@@ -10,6 +10,7 @@ use serde::Deserialize;
 
 use crate::package_check::PackageCheck;
 use crate::rule::Rule;
+use crate::scan::Root;
 use crate::venv::Distributions;
 use crate::version::Version;
 
@@ -40,14 +41,24 @@ struct Manifest {
     aliases: BTreeMap<String, String>,
     #[serde(default)]
     packages: Vec<PackageCheck>,
+    /// The pack is about Python itself, so its rules run on every file.
+    #[serde(default)]
+    every_file: bool,
+}
+
+/// Which files a pack's rules run on.
+pub(crate) enum Gate {
+    /// Files that import the pack's module. The rule matches such an import.
+    Import(Box<RuleConfig<SupportLang>>),
+    /// Every file.
+    EveryFile,
 }
 
 /// One library's rules.
 pub(crate) struct Pack {
     /// The name the library is imported by, such as `pandas`.
     pub(crate) module: &'static str,
-    /// Matches a file that imports the module.
-    pub(crate) gate: RuleConfig<SupportLang>,
+    gate: Gate,
     pub(crate) rules: Vec<Rule>,
     /// Short names a fix may write, each with the module it must be imported as, such as `pd`
     /// for `pandas`.
@@ -73,12 +84,17 @@ impl TryFrom<&PackSource> for Pack {
                 }
             }
         }
-        let gate = ast_grep_config::from_yaml_string(&gate_yaml(source.module), &globals)?
-            .pop()
-            .context("the import rule did not parse")?;
         let manifest: Manifest = match source.manifest {
             Some(yaml) => ast_grep_config::from_str(yaml).context("pack.yml")?,
             None => Manifest::default(),
+        };
+        let gate = if manifest.every_file {
+            Gate::EveryFile
+        } else {
+            let import = ast_grep_config::from_yaml_string(&gate_yaml(source.module), &globals)?
+                .pop()
+                .context("the import rule did not parse")?;
+            Gate::Import(Box::new(import))
         };
         Ok(Self {
             module: source.module,
@@ -91,6 +107,27 @@ impl TryFrom<&PackSource> for Pack {
 }
 
 impl Pack {
+    /// Whether the pack's rules can run on `src`, from its text alone. A file that never names
+    /// the module cannot import it, so it needs no parse for this pack.
+    pub(crate) fn may_apply(&self, src: &str) -> bool {
+        match &self.gate {
+            Gate::Import(_) => src.contains(self.module),
+            Gate::EveryFile => true,
+        }
+    }
+
+    /// Whether the pack's rules run on the parsed file. Rules for a library run only on files
+    /// that import it, because they match names such as `merge` and `inplace` that other
+    /// libraries share.
+    pub(crate) fn applies(&self, root: &Root, src: &str) -> bool {
+        match &self.gate {
+            Gate::Import(import) => {
+                src.contains(self.module) && root.root().find(&import.matcher).is_some()
+            }
+            Gate::EveryFile => true,
+        }
+    }
+
     /// Drops the rules that need a newer version of the library than `installed`.
     fn keep_rules_for(&mut self, installed: &Version) {
         self.rules.retain(|rule| rule.applies_to(installed));

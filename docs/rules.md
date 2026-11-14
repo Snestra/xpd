@@ -1,7 +1,8 @@
 # Rules
 
-xpd has three rule packs: [pandas](#pandas), [scikit-learn](#scikit-learn) and [Hamilton](#hamilton). A
-pack's rules run only on files that import its library.
+xpd has four rule packs: [pandas](#pandas), [scikit-learn](#scikit-learn), [Hamilton](#hamilton) and
+[Python](#python). A library's rules run only on files that import it. The Python rules run on
+every file.
 
 ## pandas
 
@@ -2292,6 +2293,130 @@ underscore. The rule also reports a write through a second name for the input, a
 
 A write that reaches the input through a helper function is not seen.
 
+## Python
+
+These rules are about Python itself, so they run on every file, whatever it imports. They cover
+style choices that no formatter or type checker makes. The `python-best-practices` skill in
+[`skills/`](https://github.com/bjoernaagaard/xpd/tree/main/skills) holds the rest of the style,
+and `python-review` reviews code against it.
+
+### Names
+
+#### module-private-name
+
+**Severity:** warning. **Fix:** none.
+
+Reports a function, class or variable at module level whose name starts with an underscore.
+
+Example:
+
+```python
+_LIMIT = 100
+
+
+def _prices(rows):
+    return [row["price"] for row in rows][:_LIMIT]
+
+
+def total(rows):
+    return sum(_prices(rows))
+```
+
+Use instead:
+
+```python
+__all__ = ["total"]
+
+LIMIT = 100
+
+
+def prices(rows):
+    return [row["price"] for row in rows][:LIMIT]
+
+
+def total(rows):
+    return sum(prices(rows))
+```
+
+The replacement is advice. xpd does not apply it automatically.
+
+`__all__` says in one place which names callers may import, and `from module import *`, type
+checkers and documentation tools all read it. An underscore says the same thing once per name
+and makes every use of the name harder to read.
+
+The rule leaves these alone:
+
+- A method or attribute of a class, such as `def _load(self)`.
+- A name inside a function.
+- `_` alone, and names with two leading underscores such as `__all__` and `__version__`.
+- A file that imports `hamilton`, where an underscore tells Hamilton that a function is not a
+  node.
+
+### Comprehensions
+
+#### comprehension-merges-dicts
+
+**Severity:** warning. **Fix:** none.
+
+Reports a comprehension or generator expression that merges dicts with `**` for every item.
+
+Example:
+
+```python
+def table(models, catalog):
+    return [{"id": m.id, **owner(m), **limits(catalog, m)} for m in models]
+```
+
+Use instead:
+
+```python
+def table(models, catalog):
+    rows = []
+    for m in models:
+        row = {"id": m.id}
+        row.update(owner(m))
+        row.update(limits(catalog, m))
+        rows.append(row)
+    return rows
+```
+
+The replacement is advice. xpd does not apply it automatically.
+
+The comprehension builds a whole row in one expression, and every part of the row has to be a
+helper that returns a dict. The loop reads from top to bottom, and a step in it can grow without
+the row being rewritten. A comprehension that maps or filters one value per item is still the
+right tool.
+
+`{**d for d in dicts}`, which Python 3.15 added, is not reported.
+
+#### unpacked-comprehension
+
+**Severity:** warning. **Fix:** none.
+
+Reports a dict literal that unpacks a dict comprehension with `**`.
+
+Example:
+
+```python
+def row(model, limits):
+    return {"id": model.id, **{f"limit_{k}": v for k, v in limits.items()}}
+```
+
+Use instead:
+
+```python
+def row(model, limits):
+    out = {"id": model.id}
+    for name, value in limits.items():
+        out[f"limit_{name}"] = value
+    return out
+```
+
+The replacement is advice. xpd does not apply it automatically.
+
+The literal builds a dict, unpacks it and merges it in one expression, so a reader has to run
+the comprehension in their head to know which keys the result has.
+
 ## Write a rule
 
 Rules are [ast-grep rules](https://ast-grep.github.io/guide/rule-config.html) in `.yml` files,
@@ -2326,7 +2451,7 @@ target/release/xpd check samples/bad.py
 cp samples/bad.py /tmp/bad.py && target/release/xpd check /tmp/bad.py --fix --unsafe-fixes
 ```
 
-The files in `samples/pandas/`, `samples/sklearn/` and `samples/hamilton/` mark each line a rule
+The files in `samples/pandas/`, `samples/sklearn/`, `samples/hamilton/` and `samples/python/` mark each line a rule
 reports with a comment that names the rules.
 
 `pack.yml` may list package checks under `packages`. Each entry has an `id`, the `package` to
@@ -2335,4 +2460,5 @@ pack's library and lacks the package. With `onlyWith`, it warns only when the pr
 one of the tools.
 
 A new folder under `rules/` is a new pack, with no Rust change. Its rules run only on files that
-import the module.
+import the module. A pack about Python itself, such as `rules/python/`, sets `everyFile: true` in
+`pack.yml`, and its rules run on every file.

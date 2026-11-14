@@ -2,7 +2,7 @@
 
 xpd is a fast, opinionated linter for Python library habits that make code slow or wrong,
 starting with pandas and scikit-learn. Each library gets one set of rules, written for its current
-version. It fixes what it can, and it is built to run after every edit a coding agent makes.
+version, and a small set of Python style rules runs on every file. It fixes what it can, and it is built to run after every edit a coding agent makes.
 
 ```console
 $ xpd check samples/bad.py
@@ -35,6 +35,20 @@ Before version 0.7.0 the package was `pdx-lint` and the command was `pdx`.
 | `xpd skill` | Print the agent skill for this version. |
 
 Run `xpd -h` for every flag.
+
+## Skills
+
+Two [Agent Skills](https://agentskills.io) hold the style that a linter cannot check. They work
+without xpd, and they run it when it is installed.
+
+| Skill | What it does |
+| --- | --- |
+| `python-best-practices` | The rules an agent follows when it writes or changes Python. |
+| `python-review` | Reviews a file, package or diff, and cites the rule for every finding. |
+
+```sh
+npx skills add bjoernaagaard/xpd
+```
 
 ## Documentation
 

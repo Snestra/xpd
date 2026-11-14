@@ -1,4 +1,4 @@
-//! Walks paths, fixes and lints each Python file with the rule packs for the libraries it imports.
+//! Walks paths, fixes and lints each Python file with the rule packs that apply to it.
 
 use std::collections::HashSet;
 use std::fs;
@@ -116,24 +116,20 @@ pub(crate) fn scan(
     Ok(Scanned { issues, fixed })
 }
 
-/// Parses `src` only when it names a pack's module, and yields each pack whose library the
-/// file imports. Rules run only on those files, because they match names such as `merge` and
-/// `inplace` that other libraries share.
-fn imported<'p>(root: &Root, src: &str, packs: &'p [Pack]) -> impl Iterator<Item = &'p Pack> {
-    packs
-        .iter()
-        .filter(move |p| src.contains(p.module) && root.root().find(&p.gate.matcher).is_some())
+/// The packs whose rules run on the file.
+fn applying<'p>(root: &'p Root, src: &'p str, packs: &'p [Pack]) -> impl Iterator<Item = &'p Pack> {
+    packs.iter().filter(move |pack| pack.applies(root, src))
 }
 
 /// The issues in one file's source.
 fn lint(path: &Path, src: &str, packs: &[Pack]) -> Vec<Issue> {
-    if !packs.iter().any(|p| src.contains(p.module)) {
+    if !packs.iter().any(|pack| pack.may_apply(src)) {
         return Vec::new();
     }
     let root = parse(src);
     let imports = aliased_imports(&root);
     let mut found = Vec::new();
-    for pack in imported(&root, src, packs) {
+    for pack in applying(&root, src, packs) {
         let unbound = unbound_aliases(pack, &imports);
         for rule in &pack.rules {
             for m in root.root().find_all(&rule.config.matcher) {
@@ -162,13 +158,13 @@ fn lint(path: &Path, src: &str, packs: &[Pack]) -> Vec<Issue> {
 /// Applies every fix up to `allowed` that does not overlap an earlier one, and returns the new
 /// source with the number of fixes applied. Overlapping fixes wait for the next pass.
 fn fix_pass(src: &str, packs: &[Pack], allowed: Applicability) -> (String, usize) {
-    if !packs.iter().any(|p| src.contains(p.module)) {
+    if !packs.iter().any(|pack| pack.may_apply(src)) {
         return (src.to_owned(), 0);
     }
     let root = parse(src);
     let imports = aliased_imports(&root);
     let mut edits = Vec::new();
-    for pack in imported(&root, src, packs) {
+    for pack in applying(&root, src, packs) {
         let unbound = unbound_aliases(pack, &imports);
         for rule in &pack.rules {
             if rule.fix.is_none_or(|a| a > allowed) {

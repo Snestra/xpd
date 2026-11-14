@@ -1,0 +1,37 @@
+# A leading underscore on a module level name marks it as not part of the API. __all__ does the
+# same job in one place, and the names stay readable. A method of a class may keep its
+# underscore, and so may a name inside a function. `_` alone and dunder names such as
+# `__all__` are left alone.
+#
+# A file that imports hamilton is left alone, because Hamilton turns every module level function
+# into a node unless its name starts with an underscore.
+id: module-private-name
+language: python
+severity: warning
+message: $NAME is a module level name that starts with an underscore. Give it a public name, and list the names callers may import in __all__.
+rule:
+  not:
+    inside:
+      stopBy: end
+      kind: module
+      has:
+        any:
+          - kind: import_statement
+            has: { stopBy: end, kind: dotted_name, regex: ^hamilton(\.|$) }
+          - kind: import_from_statement
+            has: { field: module_name, regex: ^hamilton(\.|$) }
+  any:
+    - kind: function_definition
+      has: { field: name, pattern: $NAME, regex: "^_[A-Za-z0-9]" }
+      matches: at-module-level
+    - kind: class_definition
+      has: { field: name, pattern: $NAME, regex: "^_[A-Za-z0-9]" }
+      matches: at-module-level
+    - kind: assignment
+      has: { field: left, kind: identifier, pattern: $NAME, regex: "^_[A-Za-z0-9]" }
+      inside: { kind: expression_statement, inside: { kind: module } }
+utils:
+  at-module-level:
+    any:
+      - inside: { kind: module }
+      - inside: { kind: decorated_definition, inside: { kind: module } }

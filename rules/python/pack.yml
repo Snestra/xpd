@@ -1,0 +1,2 @@
+# The Python pack: style rules about the language itself, which no library import selects.
+everyFile: true

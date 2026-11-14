@@ -1,0 +1,9 @@
+# `{"a": 1, **{f"x_{k}": v for k, v in d.items()}}` builds a dict, unpacks it, and merges it,
+# all inside one literal. A reader has to run the comprehension in their head to know the keys.
+id: unpacked-comprehension
+language: python
+severity: warning
+message: This dict literal unpacks a comprehension with **. Build the dict first and add the computed keys in a loop, or give the comprehension a name.
+rule:
+  kind: dictionary_splat
+  has: { kind: dictionary_comprehension }

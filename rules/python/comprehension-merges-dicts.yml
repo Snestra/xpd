@@ -1,0 +1,18 @@
+# A comprehension whose value merges dicts with ** does a row's worth of work in one
+# expression, and every part of the row needs a helper that returns a dict. A loop that fills
+# the row with update() reads top to bottom. A ** that belongs to a comprehension nested
+# inside is reported by unpacked-comprehension.
+id: comprehension-merges-dicts
+language: python
+severity: warning
+message: This comprehension merges dicts with ** for every item. Write a loop that builds each item and fills it with update().
+rule:
+  any:
+    - kind: dictionary_comprehension
+    - kind: list_comprehension
+    - kind: set_comprehension
+    - kind: generator_expression
+  has:
+    stopBy: end
+    kind: dictionary_splat
+    not: { has: { kind: dictionary_comprehension } }

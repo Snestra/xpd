@@ -9,7 +9,7 @@ xpd check [PATHS]... [--format text|json] [--fix] [--unsafe-fixes]
 ```
 
 Lints files and folders. Folders respect `.gitignore`. A library's rules run only on files
-that import it. A rule for a newer library version than the one installed in the project's venv
+that import it, and the Python rules run on every file. A rule for a newer library version than the one installed in the project's venv
 is skipped. `check` also warns once per run about a package the project's venv lacks, such as
 pyarrow. See [Rules](rules.md).
 

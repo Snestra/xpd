@@ -5,7 +5,7 @@ description: "Python library habits: run xpd to lint code for slow or wrong use 
 
 # xpd
 
-Use `xpd` whenever you write or change Python code that uses a library xpd has rules for.
+Use `xpd` whenever you write or change Python code.
 `xpd -h` and `xpd <command> -h` are the source of truth; prefer them over this file.
 
 - `xpd check <paths…> --format json`: lint. Fix every `error`. Fix `warning`s

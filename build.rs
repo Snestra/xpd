@@ -1,6 +1,7 @@
 //! Embeds the rule packs under rules/ into the binary.
 //!
-//! Each folder `rules/<module>/` is the pack for the Python library imported as `<module>`.
+//! Each folder `rules/<module>/` is the pack for the Python library imported as `<module>`, or
+//! for Python itself when its manifest says `everyFile: true`.
 //! `pack.yml` is the pack's manifest, and every other file is `<rule id>.yml`, the documents of
 //! one rule. This script writes `OUT_DIR/packs.rs`, which src/pack.rs includes, so a new rule or
 //! a new pack needs no Rust change.
