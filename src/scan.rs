@@ -140,7 +140,7 @@ fn lint(path: &Path, src: &str, packs: &[Pack]) -> Vec<Issue> {
                 let start = m.start_pos();
                 let fix = rule
                     .fix
-                    .filter(|_| usable_edit(rule, &m, &unbound).is_some());
+                    .filter(|_| usable_edit(rule, &m, &unbound, src).is_some());
                 found.push(Issue {
                     package: pack.module,
                     rule: rule.config.id.clone(),
@@ -175,13 +175,7 @@ fn fix_pass(src: &str, packs: &[Pack], allowed: Applicability) -> (String, usize
                 continue;
             }
             for m in root.root().find_all(&rule.config.matcher) {
-                let Some(edit) = usable_edit(rule, &m, &unbound) else {
-                    continue;
-                };
-                let old = &src.as_bytes()[edit.position..edit.position + edit.deleted_length];
-                if edit.inserted_text != old {
-                    edits.push(edit);
-                }
+                edits.extend(usable_edit(rule, &m, &unbound, src));
             }
         }
     }
@@ -231,19 +225,21 @@ fn unbound_aliases<'p>(pack: &'p Pack, imports: &[AliasedImport]) -> Vec<&'p str
         .collect()
 }
 
-/// The edit `rule` makes for `m`, or `None` when the rule has no fix or its fix writes one of
-/// the `unbound` aliases.
+/// The edit `rule` makes for `m` in `src`, or `None` when the rule has no fix, its fix writes
+/// one of the `unbound` aliases, or its fix leaves the text as it is.
 fn usable_edit(
     rule: &Rule,
     m: &NodeMatch<'_, StrDoc<SupportLang>>,
     unbound: &[&str],
+    src: &str,
 ) -> Option<Edit<String>> {
     let fixer = rule.config.fixer.first()?;
     let edit = m.make_edit(&rule.config.matcher, fixer);
     let writes_unbound = unbound
         .iter()
         .any(|alias| writes_name(&edit.inserted_text, alias));
-    (!writes_unbound).then_some(edit)
+    let old = &src.as_bytes()[edit.position..edit.position + edit.deleted_length];
+    (!writes_unbound && edit.inserted_text != old).then_some(edit)
 }
 
 /// Whether `text` uses `name` as the start of a dotted name, such as `pd.col`.

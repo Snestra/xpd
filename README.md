@@ -6,11 +6,11 @@ version. It fixes what it can, and it is built to run after every edit a coding 
 
 ```console
 $ xpd check samples/bad.py
-samples/bad.py:5:15: warning [pandas/row-loop] A loop over rows runs Python once per row. Compute on whole columns instead, such as df["a"] * df["w"].
+samples/bad.py:5:15: warning [pandas/row-loop] iterrows() builds a Series for every row. Compute on whole columns instead, such as df["a"] * df["w"]. When each row has to become a Python object, loop over itertuples() or to_dict("records").
 samples/bad.py:6:5: error [pandas/chained-assignment] Chained assignment writes to a copy under copy-on-write, so the frame keeps its old values. Assign to df.loc[i, "a"] instead.
 samples/bad.py:7:1: warning [pandas/no-inplace] inplace=True gives no speedup and blocks chaining. Reassign instead.
 samples/bad.py:8:5: warning [pandas/merge-without-validate] merge without validate= can silently duplicate rows.
-samples/bad.py:11:11: warning [pandas/concat-in-loop] Concatenating inside a loop is quadratic. Collect frames in a list, concat once.
+samples/bad.py:11:5: warning [pandas/concat-in-loop] out grows by one concat per pass, and each concat copies every earlier row. Collect the frames in a list and concat once after the loop.
 xpd: 5 issues, 2 more with --fix --unsafe-fixes
 ```
 

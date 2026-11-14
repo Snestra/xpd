@@ -281,11 +281,10 @@ fn pipeline<'r>(
     functions: &BTreeMap<String, Syntax<'r>>,
     constants: &BTreeMap<String, Syntax<'r>>,
 ) -> Pipeline {
-    let bodies: Vec<StepBody> = order
+    let mut bodies: Vec<StepBody> = order
         .iter()
         .filter_map(|step| Reader::new(step, functions.get(step)?, constants).map(Reader::read))
         .collect();
-    let mut bodies = bodies;
     let added: BTreeSet<String> = bodies
         .iter()
         .flat_map(|b| b.writes.iter().map(|w| w.name.clone()))
