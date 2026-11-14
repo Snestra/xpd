@@ -18,8 +18,9 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: jdx/mise-action@f5be966e4a917d54244728e6a5fdcd1d93a35e6c # v5.2.6
-      # Restores target/ and the cargo registry, so clippy and the rules check skip the dependencies.
-      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+      # mise.toml routes cargo through mbx. Its action restores target/ and the cargo registry
+      # from the cache that pushes to main save.
+      - uses: jdx/mr-boxington-action@88acf2bb50552c7c508cbac13e5f8c576b95b1de # v1.7.3
       - run: lefthook run pre-commit --all-files --force --no-auto-install
       # The formatters fix and stage files, so any change from HEAD means a file was not formatted.
       - run: git diff --exit-code HEAD
