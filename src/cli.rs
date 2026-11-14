@@ -52,13 +52,11 @@ enum Cmd {
     ///
     /// A library's rules run only on files that import it, and the Python rules run on every file.
     /// `[*]` marks an issue `--fix` fixes.
-    ///
-    /// Examples:
-    ///   xpd check src/
-    ///   xpd check analysis.py --format json
-    ///   xpd check . --fix
-    ///   xpd check . --fix --unsafe-fixes
-    #[command(verbatim_doc_comment)]
+    #[command(after_long_help = "Examples:
+  xpd check src/
+  xpd check analysis.py --format json
+  xpd check . --fix
+  xpd check . --fix --unsafe-fixes")]
     Check {
         /// Files or directories (directories respect .gitignore).
         #[arg(default_value = ".")]
@@ -91,11 +89,9 @@ enum Cmd {
     /// `frame.pipe(a).pipe(b)`, is read as step code. The other files are read as the Hamilton
     /// modules of one Driver. Nothing is imported or run. Exit 1 when the code would raise or
     /// Python drops a function, 2 if xpd can't run.
-    ///
-    /// Examples:
-    ///   xpd graph features.py
-    ///   xpd graph loaders.py features.py --format json
-    #[command(verbatim_doc_comment)]
+    #[command(after_long_help = "Examples:
+  xpd graph features.py
+  xpd graph loaders.py features.py --format json")]
     Graph {
         /// Files or directories (directories respect .gitignore).
         #[arg(required = true)]
