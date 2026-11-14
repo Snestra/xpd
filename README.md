@@ -38,11 +38,12 @@ Run `xpd -h` for every flag.
 
 ## Skills
 
-Two [Agent Skills](https://agentskills.io) hold the style that a linter cannot check. They work
-without xpd, and they run it when it is installed.
+Three [Agent Skills](https://agentskills.io) live in `skills/`. The two Python skills hold the
+style that a linter cannot check. They work without xpd, and they run it when it is installed.
 
 | Skill | What it does |
 | --- | --- |
+| `xpd` | When to run each xpd command. `xpd skill` prints it for the installed version. |
 | `python-best-practices` | The rules an agent follows when it writes or changes Python. |
 | `python-review` | Reviews a file, package or diff, and cites the rule for every finding. |
 

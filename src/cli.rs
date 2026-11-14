@@ -17,7 +17,7 @@ use crate::scan;
 use crate::venv::{self, Venv};
 
 /// The agent skill that `xpd skill` prints.
-const SKILL: &str = include_str!("../SKILL.md");
+const SKILL: &str = include_str!("../skills/xpd/SKILL.md");
 /// The scripts that `profile` and `equiv` hand to the project's Python.
 const PROFILE_PY: &str = include_str!("../py/profile.py");
 const EQUIV_PY: &str = include_str!("../py/equiv.py");
