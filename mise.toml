@@ -8,8 +8,9 @@ jactionlint = "2.5.0"
 ruff = "0.17.4"
 "pipx:zensical" = "0.1.1"
 
-# A release is built and published from one machine, in about 5 minutes. zig cross-compiles the
-# C code of tree-sitter and links for every platform, so no runner per platform is needed.
+# Builds every wheel on this machine, to try a build before pushing a tag. zig cross-compiles the
+# C code of tree-sitter and links for every platform. A pushed v* tag builds and publishes the
+# release on GitHub's runners.
 [tasks.wheels]
 description = "Build the sdist and a wheel for each of 8 platforms into dist/"
 run = """
@@ -25,8 +26,3 @@ build --target x86_64-pc-windows-gnu
 build --target aarch64-pc-windows-gnullvm
 ls dist
 """
-
-[tasks.publish]
-description = "Publish dist/ to PyPI. Needs UV_PUBLISH_TOKEN, a PyPI token for the project xpd"
-depends = ["wheels"]
-run = "uv publish dist/*"
