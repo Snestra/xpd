@@ -1,6 +1,5 @@
 [tools]
-# The targets are the eight platforms `mise run wheels` builds for.
-rust = { version = "1.99.1", components = "rustfmt,clippy", mr_boxington = true, targets = "aarch64-unknown-linux-gnu,x86_64-unknown-linux-musl,aarch64-unknown-linux-musl,x86_64-apple-darwin,aarch64-apple-darwin,x86_64-pc-windows-gnu,aarch64-pc-windows-gnullvm" }
+rust = { version = "1.99.1", components = "rustfmt,clippy", mr_boxington = true }
 mr-boxington = "1.30.0"
 cargo-deny = "0.20.2"
 lefthook = "2.2.2"
@@ -9,14 +8,19 @@ ruff = "0.17.4"
 "pipx:zensical" = "0.1.1"
 
 # Builds every wheel on this machine, to try a build before pushing a tag. zig cross-compiles the
-# C code of tree-sitter and links for every platform. A pushed v* tag builds and publishes the
-# release on GitHub's runners.
+# C code of tree-sitter and links for every platform. The task adds the Rust targets it needs, so
+# CI and other tasks skip downloading them. A pushed v* tag builds and publishes the release on
+# GitHub's runners.
 [tasks.wheels]
 description = "Build the sdist and a wheel for each of 8 platforms into dist/"
 run = """
+rustup target add x86_64-unknown-linux-gnu aarch64-unknown-linux-gnu x86_64-unknown-linux-musl \
+  aarch64-unknown-linux-musl x86_64-apple-darwin aarch64-apple-darwin x86_64-pc-windows-gnu \
+  aarch64-pc-windows-gnullvm
 rm -rf dist
+uvx maturin sdist --out dist
 build() { uvx --with ziglang maturin build --release --zig --out dist "$@"; }
-build --sdist --compatibility manylinux2014
+build --compatibility manylinux2014 --target x86_64-unknown-linux-gnu
 build --compatibility manylinux2014 --target aarch64-unknown-linux-gnu
 build --compatibility musllinux_1_2 --target x86_64-unknown-linux-musl
 build --compatibility musllinux_1_2 --target aarch64-unknown-linux-musl
